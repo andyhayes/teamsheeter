@@ -30,3 +30,7 @@ Data is saved in the browser's local storage. **Export** (top right) saves every
    (defence/midfield/attack), and keeps players in place between periods.
 
 It's seeded, so results are repeatable; Shuffle changes the seed.
+
+## Deploying
+
+`netlify.toml` configures Netlify: connect the repo (or run `netlify deploy`) and it builds with `npm run build` and publishes `dist/`. It's a static site with no server, and each browser keeps its own data, so use Export/Import to move data between devices.
