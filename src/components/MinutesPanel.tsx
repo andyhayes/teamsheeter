@@ -11,6 +11,12 @@ interface Props {
 export function MinutesPanel({ schedule, periods, players, total }: Props) {
   const minutes = playerMinutes(schedule, periods, players.map((p) => p.id));
   const balance = minutesBalance(minutes, total);
+  // Most minutes first, then alphabetical.
+  const sorted = [...players].sort(
+    (a, b) =>
+      minutes.get(b.id)!.total - minutes.get(a.id)!.total ||
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }),
+  );
 
   return (
     <section className="card minutes">
@@ -25,7 +31,7 @@ export function MinutesPanel({ schedule, periods, players, total }: Props) {
         </p>
       )}
       <ul className="minutes-list">
-        {players.map((p) => {
+        {sorted.map((p) => {
           const m = minutes.get(p.id)!;
           const fullKeeper = m.gk >= total;
           const diff = balance && !fullKeeper ? m.total - balance.target : 0;

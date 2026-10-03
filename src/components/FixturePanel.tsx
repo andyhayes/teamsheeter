@@ -64,6 +64,22 @@ export function FixturePanel({ fixture, squad, formation, players, locks, onChan
     <div className="fixture-panel">
       <section className="card">
         <h2>Fixture</h2>
+        <label className="field">
+          <span>Team name</span>
+          <input
+            value={fixture.teamName}
+            placeholder="Your team"
+            onChange={(e) => onChange({ teamName: e.target.value })}
+          />
+        </label>
+        <label className="field">
+          <span>Opponent</span>
+          <input
+            value={fixture.opponent}
+            placeholder="Opponent name"
+            onChange={(e) => onChange({ opponent: e.target.value })}
+          />
+        </label>
         <div className="field-row">
           <label className="field">
             <span>Date</span>
@@ -78,14 +94,6 @@ export function FixturePanel({ fixture, squad, formation, players, locks, onChan
             </select>
           </label>
         </div>
-        <label className="field">
-          <span>Opponent</span>
-          <input
-            value={fixture.opponent}
-            placeholder="Team name"
-            onChange={(e) => onChange({ opponent: e.target.value })}
-          />
-        </label>
         <label className="field">
           <span>Formation</span>
           <select value={fixture.formationId} onChange={(e) => onChange({ formationId: e.target.value })}>

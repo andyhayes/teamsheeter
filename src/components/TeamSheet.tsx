@@ -99,7 +99,7 @@ export function TeamSheet({
         </thead>
         <tbody>
           {slots.map((label, s) => (
-            <tr key={s} className={s === 0 ? 'gk-row' : ''}>
+            <tr key={s}>
               <th className="pos-col">{label}</th>
               {periods.map((_, k) => {
                 const id = schedule[k][s];

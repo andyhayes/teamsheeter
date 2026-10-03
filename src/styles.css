@@ -96,6 +96,9 @@ textarea { resize: vertical; margin-bottom: 8px; }
 }
 .brand { font-weight: 700; font-size: 16px; display: flex; gap: 8px; align-items: center; }
 .tabs { display: flex; gap: 4px; }
+.file-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.file-status { font-size: 12px; color: var(--accent); }
+.file-status.error { color: var(--warn); }
 .tabs button { border: 0; background: none; padding: 6px 12px; border-radius: 6px; color: var(--muted); }
 .tabs button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 
@@ -200,7 +203,6 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 .cell.hover-player { background: var(--hover); }
 .cell.swap-target { outline: 1px dashed var(--select); outline-offset: -3px; }
 .cell.selected { background: var(--select-soft); outline: 2px solid var(--select); outline-offset: -2px; }
-.gk-row .cell .name { color: var(--gk); font-weight: 600; }
 .bench-row.first th, .bench-row.first td { border-top: 2px solid var(--border); }
 /* The Subs label columns read as one block down the bench rows. */
 .bench-row .pos-col, .bench-row .ht-col { border-bottom: 0; }
@@ -242,6 +244,10 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 .lock-btn.on { color: var(--accent); }
 @media (hover: none) { .lock-btn { opacity: 0.5; } }
 
+/* Applied briefly while copying the sheet as an image. */
+.capturing { width: max-content; min-width: 100%; }
+.capturing .sheet-scroll { overflow: visible; }
+
 /* Details */
 .details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
 @media (max-width: 1100px) { .details { grid-template-columns: 1fr; } }
@@ -281,9 +287,15 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 .chip { padding: 2px 7px; font-size: 11px; border-radius: 10px; color: var(--muted); }
 .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 
+/* Stats tally chart: printed only. */
+.print-only { display: none; }
+
 /* Print: one A4 portrait page with the sheet, subs and minutes. */
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
+  /* Zero page margin leaves the browser no room for its header/footer (date, URL, page number);
+     the margin is restored as body padding instead. */
+  @page { size: A4 portrait; margin: 0; }
+  body { padding: 10mm; }
   :root { --bg: #fff; --surface: #fff; --surface-2: #f2f2f2; --bench: #f7f7f7; --border: #bbb; --text: #000; color-scheme: light; font-size: 11px; }
   .no-print { display: none !important; }
   .page, .page.match { display: block; padding: 0; max-width: none; }
@@ -313,4 +325,23 @@ td.ht-col { font-size: 12px; font-weight: 700; }
   .minutes-list li { grid-template-columns: minmax(0, 1.4fr) 1.6fr 32px; gap: 6px; padding: 1px 0; }
   .bar { height: 7px; }
   .bar .fill, .bar .target, .tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .print-only { display: block; }
+  /* The sheet area is exactly one page tall so the stats chart can take all the space that's left. */
+  .sheet-area { display: flex; flex-direction: column; height: 276mm; }
+  .sheet-area > * { flex: none; }
+  .stats-sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-top: 8px; }
+  .stats-tables { flex: 1 1 auto; min-height: 0; }
+  .stats-tables.split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stats-table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
+  .stats-table th, .stats-table td { border: 1px solid #999; padding: 0 4px; }
+  .stats-table th { font-size: 9px; font-weight: 600; color: var(--muted); text-align: center; height: 16px; }
+  .stats-table .stats-name { width: 24%; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Names sized to fill their cells so they read at a glance; smaller when split into two tables. */
+  .stats-table td.stats-name { font-size: var(--name-size, 16px); line-height: 1.1; font-weight: 600; padding: 0 6px; }
+  .stats-tables.split .stats-table .stats-name { width: 28%; }
+  .stats-tables.split .stats-table td.stats-name { font-size: var(--name-size, 13px); padding: 0 4px; }
+  .stats-table th.stats-name { font-size: 9px; }
+  .stats-table td.na { background: #e6e6e6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 }

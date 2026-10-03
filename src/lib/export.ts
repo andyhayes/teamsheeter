@@ -1,5 +1,5 @@
 import { formatMinutes, playerMinutes } from './schedule-utils';
-import type { Fixture, Period, PlayerId, Schedule } from './types';
+import { fixtureTitle, type Fixture, type Period, type PlayerId, type Schedule } from './types';
 
 /**
  * Tab-separated team sheet laid out like TeamSheetTemplates.xlsx:
@@ -24,7 +24,7 @@ export function scheduleToTsv(
   const benchRows = Math.max(0, ...benches.map((b) => b.length));
 
   const lines: string[][] = [];
-  lines.push([fixture.date, fixture.opponent ? `vs ${fixture.opponent}` : '']);
+  lines.push([fixture.date, fixtureTitle(fixture)]);
   lines.push(['', ...columns.map((c) => (c === 'HT' ? 'HT' : `${formatMinutes(periods[c].duration)} mins`))]);
   slots.forEach((label, s) => {
     lines.push([label, ...columns.map((c) => (c === 'HT' ? label : name(schedule[c][s])))]);

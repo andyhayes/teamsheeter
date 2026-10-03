@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { ALL_POSITIONS } from '../lib/presets';
 import { newId } from '../lib/storage';
 import type { Player } from '../lib/types';
@@ -10,7 +10,6 @@ interface Props {
 
 export function SquadPanel({ squad, onChange }: Props) {
   const [bulk, setBulk] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const update = (id: string, patch: Partial<Player>) =>
     onChange(squad.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -39,50 +38,10 @@ export function SquadPanel({ squad, onChange }: Props) {
     setBulk('');
   };
 
-  const exportSquad = () => {
-    const blob = new Blob([JSON.stringify(squad, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'squad.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
-  const importSquad = async (file: File) => {
-    try {
-      const data = JSON.parse(await file.text());
-      if (!Array.isArray(data)) throw new Error('Expected a list of players');
-      onChange(
-        data
-          .filter((p) => typeof p?.name === 'string')
-          .map((p) => ({
-            id: typeof p.id === 'string' ? p.id : newId(),
-            name: p.name,
-            positions: Array.isArray(p.positions) ? p.positions.filter((x: unknown) => typeof x === 'string') : [],
-          })),
-      );
-    } catch (e) {
-      console.error('Squad import failed', e);
-    }
-  };
-
   return (
     <div className="squad-panel">
       <section className="card">
-        <div className="card-head">
-          <h2>Squad</h2>
-          <div className="actions">
-            <button onClick={exportSquad}>Export</button>
-            <button onClick={() => fileRef.current?.click()}>Import</button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json"
-              hidden
-              onChange={(e) => e.target.files?.[0] && importSquad(e.target.files[0])}
-            />
-          </div>
-        </div>
+        <h2>Squad</h2>
         <p className="muted small">
           Tick the positions each player is happy playing. The scheduler prefers these, then the same line (defence,
           midfield, attack). Leave blank for "anywhere". Players with GK are offered as keepers.

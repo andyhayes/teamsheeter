@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { FixturePanel } from './components/FixturePanel';
 import { SquadPanel } from './components/SquadPanel';
 import { TeamSheet, type CellRef } from './components/TeamSheet';
 import { MinutesPanel } from './components/MinutesPanel';
+import { StatsSheet } from './components/StatsSheet';
 import { ChangeoverList } from './components/ChangeoverList';
 import { FORMATIONS } from './lib/presets';
 import { generateSchedule } from './lib/scheduler';
 import { flattenPeriods, matchLength } from './lib/schedule-utils';
-import { loadState, saveState, type AppState } from './lib/storage';
-import { benchKey, lockKey, parseLockKey, type Fixture, type Locks, type Player, type PlayerId } from './lib/types';
+import { exportState, importState, loadState, saveState, type AppState } from './lib/storage';
+import { benchKey, fixtureTitle, lockKey, parseLockKey, type Fixture, type Locks, type Player, type PlayerId } from './lib/types';
 import { scheduleToTsv } from './lib/export';
+import { copyElementImage } from './lib/copy-image';
 
 function derive(state: AppState) {
   const formation = FORMATIONS.find((f) => f.id === state.fixture.formationId) ?? FORMATIONS[0];
@@ -57,6 +60,10 @@ export default function App() {
   const [tab, setTab] = useState<'match' | 'squad'>('match');
   const [selected, setSelected] = useState<CellRef | null>(null);
   const [copied, setCopied] = useState(false);
+  const [imageStatus, setImageStatus] = useState<'idle' | 'working' | 'copied' | 'downloaded' | 'failed'>('idle');
+  const captureRef = useRef<HTMLDivElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+  const [fileStatus, setFileStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   const { formation, periods, players, inputKey } = useMemo(() => derive(state), [state]);
   const schedule = state.scheduleKey === inputKey ? state.schedule : null;
@@ -155,9 +162,59 @@ export default function App() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const copyImage = async () => {
+    if (!captureRef.current) return;
+    // Clear any selected cell so it doesn't appear highlighted in the image.
+    flushSync(() => setSelected(null));
+    setImageStatus('working');
+    const { opponent, date } = state.fixture;
+    const filename = `teamsheet-${[date, opponent].filter(Boolean).join('-').replace(/[^\w-]+/g, '-') || 'fixture'}.png`;
+    try {
+      setImageStatus(await copyElementImage(captureRef.current, filename, { padding: 20 }));
+    } catch (e) {
+      console.error('Copy image failed', e);
+      setImageStatus('failed');
+    }
+    setTimeout(() => setImageStatus('idle'), 2000);
+  };
+  const imageLabel = {
+    idle: 'Copy image',
+    working: 'Copying…',
+    copied: 'Image copied ✓',
+    downloaded: 'Downloaded ✓',
+    failed: 'Copy failed',
+  }[imageStatus];
+
+  const showFileStatus = (ok: boolean, text: string) => {
+    setFileStatus({ ok, text });
+    setTimeout(() => setFileStatus(null), ok ? 2500 : 6000);
+  };
+
+  const exportFile = () => {
+    const blob = new Blob([exportState(state)], { type: 'application/json' });
+    const { date, opponent } = state.fixture;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `teamsheeter-${[date, opponent].filter(Boolean).join('-').replace(/[^\w-]+/g, '-') || 'backup'}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showFileStatus(true, 'Exported ✓');
+  };
+
+  const importFile = async (file: File) => {
+    try {
+      const next = importState(await file.text());
+      setSelected(null);
+      setState(next);
+      showFileStatus(true, 'Imported ✓');
+    } catch (e) {
+      showFileStatus(false, `Import failed: ${e instanceof Error ? e.message : 'unreadable file'}`);
+    }
+  };
+
   const lockCount = Object.keys(state.locks).length;
-  const { opponent, date, venue } = state.fixture;
-  const title = opponent ? `vs ${opponent}` : 'Next fixture';
+  const { date, venue } = state.fixture;
+  const title = fixtureTitle(state.fixture);
 
   return (
     <div className="app">
@@ -176,6 +233,26 @@ export default function App() {
             Squad ({state.squad.length})
           </button>
         </nav>
+        <div className="file-actions">
+          {fileStatus && <span className={`file-status ${fileStatus.ok ? '' : 'error'}`}>{fileStatus.text}</span>}
+          <button onClick={exportFile} title="Save the squad, fixture and team sheet to a file">
+            Export
+          </button>
+          <button onClick={() => importRef.current?.click()} title="Load a previously exported file, replacing the current squad and match day">
+            Import
+          </button>
+          <input
+            ref={importRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) importFile(file);
+            }}
+          />
+        </div>
       </header>
 
       {tab === 'squad' ? (
@@ -197,6 +274,7 @@ export default function App() {
           </aside>
 
           <section className="sheet-area">
+            <div className="capture-area" ref={captureRef}>
             <div className="sheet-header">
               <div>
                 <h1>{title}</h1>
@@ -223,6 +301,9 @@ export default function App() {
                 >
                   Clear locks{lockCount ? ` (${lockCount})` : ''}
                 </button>
+                <button onClick={copyImage} disabled={!schedule || imageStatus === 'working'} title="Copy the fixture details and team sheet to the clipboard as a picture">
+                  {imageLabel}
+                </button>
                 <button onClick={copyForExcel}>{copied ? 'Copied ✓' : 'Copy for Excel'}</button>
                 <button className="primary" onClick={() => window.print()}>
                   Print
@@ -236,20 +317,24 @@ export default function App() {
               </p>
             )}
 
+            {schedule && (
+              <TeamSheet
+                schedule={schedule}
+                slots={formation.slots}
+                periods={periods}
+                players={players}
+                locks={state.locks}
+                selected={selected}
+                onCellClick={handleCellClick}
+                onToggleLock={toggleLock}
+                onToggleBenchLock={toggleBenchLock}
+                onTogglePeriodLock={togglePeriodLock}
+              />
+            )}
+            </div>
+
             {schedule ? (
               <>
-                <TeamSheet
-                  schedule={schedule}
-                  slots={formation.slots}
-                  periods={periods}
-                  players={players}
-                  locks={state.locks}
-                  selected={selected}
-                  onCellClick={handleCellClick}
-                  onToggleLock={toggleLock}
-                  onToggleBenchLock={toggleBenchLock}
-                  onTogglePeriodLock={togglePeriodLock}
-                />
                 <p className="hint no-print">
                   Click two cells in the same column to swap players (including the bench). Swapped cells are locked
                   so <b>Regenerate</b> keeps them and rebalances everyone else. Lock a bench cell to keep that player
@@ -264,6 +349,7 @@ export default function App() {
                     total={matchLength(state.fixture.halves)}
                   />
                 </div>
+                <StatsSheet schedule={schedule} players={players} />
               </>
             ) : (
               <p className="muted">Building schedule…</p>

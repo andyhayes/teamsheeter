@@ -16,9 +16,9 @@ npm run build    # static site in dist/
    Each period structure shows the fairest minutes range possible with the selected squad, so you can pick the best one.
 3. The schedule is generated automatically. Click two cells in the same column to swap players (pitch ↔ pitch or pitch ↔ bench).
    Swapped cells are locked; **Regenerate** keeps locks and rebalances everyone else. **Shuffle** tries a different, equally fair arrangement.
-4. **Print** (A4 landscape) or **Copy for Excel** (pastes in the same layout as the spreadsheet).
+4. **Print** (one A4 portrait page, with a blank tally chart for GK saves, shots, shots on target, assists and goals), **Copy image** (the grid as a picture, ready to paste into a message) or **Copy for Excel** (pastes in the same layout as the spreadsheet).
 
-Data is saved in the browser's local storage. Use Export/Import on the Squad tab to back up or move the squad.
+Data is saved in the browser's local storage. **Export** (top right) saves everything — squad, fixture, team sheet and locks — to a JSON file; **Import** restores it, e.g. on another computer.
 
 ## How the schedule is built
 

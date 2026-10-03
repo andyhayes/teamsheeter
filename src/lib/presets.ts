@@ -32,22 +32,8 @@ export const POSITION_FAMILIES: Record<string, 'GK' | 'DEF' | 'MID' | 'ATT'> = {
 
 export const ALL_POSITIONS = Object.keys(POSITION_FAMILIES);
 
-/** Starter squad taken from the 14-player template, positions from where each player started. */
-export const DEMO_SQUAD: Omit<Player, 'id'>[] = [
-  { name: 'Thomas W', positions: ['GK', 'CB', 'CM'] },
-  { name: 'Lucas', positions: ['GK'] },
-  { name: 'Peter', positions: ['CB', 'CM'] },
-  { name: 'Jonah', positions: ['CB'] },
-  { name: 'Will', positions: ['CB', 'CM'] },
-  { name: 'Blake', positions: ['CB'] },
-  { name: 'Oscar', positions: ['CM'] },
-  { name: 'Theo', positions: ['CM'] },
-  { name: 'Thomas L', positions: ['LW', 'CB', 'CM'] },
-  { name: 'Alex', positions: ['RW'] },
-  { name: 'Jax', positions: ['ST', 'CB'] },
-  { name: 'George A', positions: ['LW', 'RW'] },
-  { name: 'George B', positions: ['ST', 'LW'] },
-  { name: 'Ethan', positions: ['ST'] },
-  { name: 'Louie', positions: ['CB', 'LW'] },
-  { name: 'Myles', positions: [] },
-];
+/** Placeholder starter squad: rename players and set positions on the Squad tab. Player 1 keeps goal. */
+export const DEMO_SQUAD: Omit<Player, 'id'>[] = Array.from({ length: 14 }, (_, i) => ({
+  name: `Player ${i + 1}`,
+  positions: i === 0 ? ['GK'] : [],
+}));
