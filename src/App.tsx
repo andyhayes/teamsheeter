@@ -274,6 +274,8 @@ export default function App() {
           </aside>
 
           <section className="sheet-area">
+            {/* In print, everything in here is page 1; the minutes go on page 2. */}
+            <div className="print-page">
             <div className="capture-area" ref={captureRef}>
             <div className="sheet-header">
               <div>
@@ -342,17 +344,30 @@ export default function App() {
                 </p>
                 <div className="details">
                   <ChangeoverList schedule={schedule} periods={periods} slots={formation.slots} players={players} />
-                  <MinutesPanel
-                    schedule={schedule}
-                    periods={periods}
-                    players={players}
-                    total={matchLength(state.fixture.halves)}
-                  />
+                  <div className="no-print">
+                    <MinutesPanel
+                      schedule={schedule}
+                      periods={periods}
+                      players={players}
+                      total={matchLength(state.fixture.halves)}
+                    />
+                  </div>
                 </div>
                 <StatsSheet schedule={schedule} players={players} />
               </>
             ) : (
               <p className="muted">Building schedule…</p>
+            )}
+            </div>
+            {schedule && (
+              <div className="print-only print-page-2">
+                <MinutesPanel
+                  schedule={schedule}
+                  periods={periods}
+                  players={players}
+                  total={matchLength(state.fixture.halves)}
+                />
+              </div>
             )}
           </section>
         </main>

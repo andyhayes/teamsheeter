@@ -254,6 +254,7 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 
 .change-list li { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); }
 .change-list li:first-child { border-top: 0; }
+.change-group + .change-group .change-list li:first-child { border-top: 1px solid var(--border); }
 .when { width: 64px; flex: none; font-weight: 700; }
 .what { flex: 1; display: grid; gap: 3px; }
 .sub { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -323,7 +324,14 @@ td.ht-col { font-size: 12px; font-weight: 700; }
   /* One unbroken HT block down both goals rows, separating the halves. */
   .goals-row.first .ht-col { border-bottom: 0; }
 
-  .details { grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; break-inside: avoid; }
+  .details { grid-template-columns: 1fr; gap: 8px; margin-top: 8px; break-inside: avoid; }
+  /* Substitutions across the full width, one column per half. */
+  .change-groups { display: grid; grid-template-columns: repeat(var(--groups, 2), minmax(0, 1fr)); gap: 0 16px; }
+  .change-group + .change-group { border-left: 1px solid var(--border); padding-left: 16px; }
+  .change-group h3 { font-size: 11px; margin: 0 0 2px; color: var(--muted); }
+  .change-group .change-list li:first-child { border-top: 0; }
+  /* Page margins are zero (to hide the browser header/footer), so page 2 adds its own top margin. */
+  .print-page-2 { break-before: page; padding-top: 10mm; }
   .card { border-color: #bbb; padding: 6px 8px; margin-bottom: 0; break-inside: avoid; }
   .change-list li { padding: 3px 0; gap: 8px; }
   .when { width: 44px; }
@@ -335,8 +343,8 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 
   .print-only { display: block; }
   /* The sheet area is exactly one page tall so the stats chart can take all the space that's left. */
-  .sheet-area { display: flex; flex-direction: column; height: 276mm; }
-  .sheet-area > * { flex: none; }
+  .print-page { display: flex; flex-direction: column; height: 276mm; }
+  .print-page > * { flex: none; }
   .stats-sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-top: 8px; }
   .stats-tables { flex: 1 1 auto; min-height: 0; }
   .stats-tables.split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
