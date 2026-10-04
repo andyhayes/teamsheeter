@@ -289,6 +289,7 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 
 /* Stats tally chart: printed only. */
 .print-only { display: none; }
+.goals-row { display: none; }
 
 /* Print: one A4 portrait page with the sheet, subs and minutes. */
 @media print {
@@ -306,7 +307,7 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 
   .sheet-scroll { overflow: visible; border-color: #999; }
   .sheet { table-layout: fixed; }
-  .sheet .pos-col { width: 38px; padding: 0 5px; font-size: 10px; position: static; }
+  .sheet .pos-col { width: 46px; padding: 0 5px; font-size: 10px; position: static; }
   .period-head { min-width: 0; padding: 3px 2px !important; }
   .period-time { font-size: 9px; }
   .ht-col { width: 32px; min-width: 32px; }
@@ -314,7 +315,13 @@ td.ht-col { font-size: 12px; font-weight: 700; }
   .cell { height: 22px; padding: 2px 4px 2px 5px !important; cursor: default; white-space: normal; line-height: 1.15; overflow-wrap: anywhere; }
   .cell, .sheet-key i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .cell.hover-player { background: inherit; }
-  .sheet-key { padding: 4px 8px; font-size: 9px; }
+  .sheet-key { display: none; }
+  .goals-row { display: table-row; }
+  .goals-row.first th, .goals-row.first td { border-top: 2px solid var(--border); }
+  .goals-row .pos-col { font-size: 9px; line-height: 1.15; padding: 2px 5px; white-space: normal; }
+  .goals-row .goals-cell { height: 30px; }
+  /* One unbroken HT block down both goals rows, separating the halves. */
+  .goals-row.first .ht-col { border-bottom: 0; }
 
   .details { grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; break-inside: avoid; }
   .card { border-color: #bbb; padding: 6px 8px; margin-bottom: 0; break-inside: avoid; }

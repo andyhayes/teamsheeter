@@ -182,6 +182,18 @@ export function TeamSheet({
               })}
             </tr>
           ))}
+          {/* Print only: boxes for tallying goals in each period. */}
+          {['Goals for', 'Goals against'].map((label, r) => (
+            <tr key={label} className={r === 0 ? 'goals-row first' : 'goals-row'}>
+              <th className="pos-col">{label}</th>
+              {periods.map((_, k) => (
+                <Fragment key={k}>
+                  {isHalfStart(k) && <td className="ht-col" />}
+                  <td className="cell goals-cell" />
+                </Fragment>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
       <div className="sheet-key">
