@@ -11,11 +11,12 @@ export async function copyElementImage(
   { padding = 0 }: { padding?: number } = {},
 ): Promise<'copied' | 'downloaded'> {
   const render = async () => {
-    // Briefly let the content take its full width so a horizontally scrolled grid is captured whole.
+    // Briefly lay the content out like the printed sheet (see `.capturing` in styles.css).
     node.classList.add('capturing');
     try {
       const blob = await toBlob(node, {
-        pixelRatio: 2,
+        // The sheet is captured at printed-page width, so render at 3× to keep the picture sharp.
+        pixelRatio: 3,
         backgroundColor: getComputedStyle(document.body).backgroundColor,
         width: node.scrollWidth + padding * 2,
         height: node.scrollHeight + padding * 2,

@@ -188,7 +188,8 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 
 .cell {
   position: relative;
-  height: 34px;
+  height: 42px;
+  font-size: 18px;
   padding: 0 22px 0 8px !important;
   cursor: pointer;
   border-left: 1px solid var(--border);
@@ -244,9 +245,33 @@ td.ht-col { font-size: 12px; font-weight: 700; }
 .lock-btn.on { color: var(--accent); }
 @media (hover: none) { .lock-btn { opacity: 0.5; } }
 
-/* Applied briefly while copying the sheet as an image. */
-.capturing { width: max-content; min-width: 100%; }
+/*
+ * Applied briefly while copying the sheet as an image, so the picture matches the printed sheet:
+ * same width as the printed page content, same column widths, row heights and fitted name size
+ * (keep in step with the print styles below). Controls are left out.
+ */
+.capturing { width: 718px; font-size: 11px; }
+.capturing .no-print { display: none; }
+.capturing .sheet-header { margin-bottom: 6px; }
+.capturing h1 { font-size: 16px; white-space: nowrap; }
+.capturing .sheet-title { flex: 1; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; }
+.capturing .sheet-title p { margin: 0 0 0 auto; text-align: right; }
 .capturing .sheet-scroll { overflow: visible; }
+.capturing .sheet { table-layout: fixed; }
+.capturing .sheet .pos-col { width: 46px; padding: 0 5px; font-size: 10px; position: static; }
+.capturing .period-head { min-width: 0; padding: 3px 2px !important; }
+.capturing .period-time { font-size: 9px; }
+.capturing .ht-col { width: 32px; min-width: 32px; }
+.capturing td.ht-col { font-size: 10px; }
+.capturing .cell {
+  height: 26px;
+  font-size: var(--print-cell-size, 13px);
+  padding: 2px 4px 2px 5px !important;
+  white-space: normal;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.capturing .sheet-key { padding: 4px 8px; font-size: 9px; }
 
 /* Details */
 .details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
@@ -305,6 +330,9 @@ td.ht-col { font-size: 12px; font-weight: 700; }
   h2 { font-size: 12px; margin-bottom: 4px; }
   p { margin: 2px 0 4px; }
   .sheet-header { margin-bottom: 6px; }
+  /* Title on the left, fixture details on the right of one line, leaving more of the page for the stats. */
+  .sheet-title { flex: 1; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; }
+  .sheet-title p { margin: 0 0 0 auto; text-align: right; }
 
   .sheet-scroll { overflow: visible; border-color: #999; }
   .sheet { table-layout: fixed; }
@@ -313,7 +341,7 @@ td.ht-col { font-size: 12px; font-weight: 700; }
   .period-time { font-size: 9px; }
   .ht-col { width: 32px; min-width: 32px; }
   td.ht-col { font-size: 10px; border-left: 1px solid var(--border); }
-  .cell { height: 22px; padding: 2px 4px 2px 5px !important; cursor: default; white-space: normal; line-height: 1.15; overflow-wrap: anywhere; }
+  .cell { height: 26px; font-size: var(--print-cell-size, 13px); padding: 2px 4px 2px 5px !important; cursor: default; white-space: normal; line-height: 1.15; overflow-wrap: anywhere; }
   .cell, .sheet-key i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .cell.hover-player { background: inherit; }
   .sheet-key { display: none; }

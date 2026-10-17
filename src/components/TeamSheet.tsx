@@ -1,7 +1,30 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useMemo, useState, type CSSProperties } from 'react';
 import { positionCost } from '../lib/scheduler';
 import { formatMinutes } from '../lib/schedule-utils';
 import { benchKey, lockKey, type Locks, type Period, type Player, type PlayerId, type Schedule } from '../lib/types';
+
+// Printed page geometry (px at 96dpi), matching the print styles: A4 width minus 10mm margins,
+// the position column and each HT column.
+const PRINT_CONTENT_WIDTH = 718;
+const PRINT_POS_COL = 46;
+const PRINT_HT_COL = 32;
+/** Cell padding plus room for the • and ▼ markers that can follow a name. */
+const PRINT_CELL_EXTRAS = 26;
+
+/**
+ * Largest font size (px) at which the longest player name still fits one line of a printed
+ * period column, so names fill the cells without wrapping. Clamped to 11–16px.
+ */
+function fitPrintFontSize(names: string[], periods: Period[]): number {
+  const breaks = (periods.at(-1)?.half ?? 0);
+  const column = (PRINT_CONTENT_WIDTH - PRINT_POS_COL - breaks * PRINT_HT_COL) / Math.max(1, periods.length);
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx || !names.length) return 13;
+  ctx.font = `100px ${getComputedStyle(document.body).fontFamily}`;
+  const widestPer100 = Math.max(...names.map((n) => ctx.measureText(n).width));
+  const size = ((column - PRINT_CELL_EXTRAS) / widestPer100) * 100;
+  return Math.min(16, Math.max(11, Math.floor(size * 2) / 2));
+}
 
 export interface CellRef {
   period: number;
@@ -60,6 +83,11 @@ export function TeamSheet({
       .filter(Boolean)
       .join(' ');
 
+  const printFontSize = useMemo(
+    () => fitPrintFontSize(players.map((p) => p.name), periods),
+    [players, periods],
+  );
+
   const playerProps = (id: PlayerId | null) => ({
     onMouseEnter: () => setHovered(id),
     onMouseLeave: () => setHovered(null),
@@ -67,7 +95,10 @@ export function TeamSheet({
 
   return (
     <div className="sheet-scroll">
-      <table className="sheet">
+      <table
+        className="sheet"
+        style={{ '--print-cell-size': `${printFontSize}px` } as CSSProperties}
+      >
         <thead>
           <tr>
             <th className="pos-col" />

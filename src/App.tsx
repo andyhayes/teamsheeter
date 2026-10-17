@@ -278,7 +278,7 @@ export default function App() {
             <div className="print-page">
             <div className="capture-area" ref={captureRef}>
             <div className="sheet-header">
-              <div>
+              <div className="sheet-title">
                 <h1>{title}</h1>
                 <p className="muted">
                   {[date && new Date(date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }),
