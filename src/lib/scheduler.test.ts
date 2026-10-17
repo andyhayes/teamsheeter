@@ -50,6 +50,21 @@ describe('generateSchedule', () => {
     expect(balance.max - balance.min).toBeLessThanOrEqual(7.5);
   });
 
+  it.each([
+    [14, '10x3', 20],
+    [14, '12-6-12-666', 18],
+    [16, '6x5', 18],
+  ])('keeps bench spells short with %i players on %s (max %i′)', (count, halvesId, maxSpell) => {
+    const { schedule, periods, players } = run(count, halvesId);
+    for (const p of players.slice(1)) {
+      let spell = 0;
+      schedule.forEach((row, k) => {
+        spell = row.includes(p.id) ? 0 : spell + periods[k].duration;
+        expect(spell).toBeLessThanOrEqual(maxSpell);
+      });
+    }
+  });
+
   it('respects locked cells', () => {
     const { schedule } = run(12, '10x3', { locks: { '0:8': 'p11', '3:1': 'p11' } });
     expect(schedule[0][8]).toBe('p11');

@@ -22,7 +22,12 @@ export interface ScheduleResult {
 const W_SUB = 6; // each player coming on mid-half
 const W_SUB_HT = 2; // each player coming on at half-time
 const W_STINT = 10; // each extra separate spell on the pitch
-const W_BENCH = 4; // each consecutive period on the bench beyond the first
+// Bench spells up to BENCH_FREE minutes cost nothing; beyond that each spell costs
+// W_BENCH × (excess minutes)², so long spells (20′+) get broken up without churning
+// through extra substitutions just to shorten spells that are already short.
+const W_BENCH = 0.15;
+const BENCH_FREE = 10;
+const benchCost = (minutes: number) => W_BENCH * Math.max(0, minutes - BENCH_FREE) ** 2;
 const W_MOVE = 6; // player changes position while staying on
 const W_MOVE_HT = 2;
 const W_RETURN_MOVE = 2; // returning sub plays somewhere other than their last position
@@ -116,7 +121,7 @@ function lineupCost(on: Uint8Array[], pr: Prepared): number {
   for (let i = 0; i < n; i++) {
     let mins = 0;
     let stints = 0;
-    let benchRun = 0;
+    let benchMins = 0;
     for (let k = 0; k < P; k++) {
       if (on[k][i]) {
         mins += durations[k];
@@ -124,12 +129,13 @@ function lineupCost(on: Uint8Array[], pr: Prepared): number {
           stints++;
           if (k > 0) cost += halves[k] !== halves[k - 1] ? W_SUB_HT : W_SUB;
         }
-        benchRun = 0;
+        cost += benchCost(benchMins);
+        benchMins = 0;
       } else {
-        benchRun++;
-        if (benchRun > 1) cost += W_BENCH;
+        benchMins += durations[k];
       }
     }
+    cost += benchCost(benchMins);
     cost += mins * mins;
     if (stints > 1) cost += (stints - 1) * W_STINT;
   }

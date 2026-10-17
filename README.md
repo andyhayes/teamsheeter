@@ -25,7 +25,7 @@ Data is saved in the browser's local storage. **Export** (top right) saves every
 `src/lib/scheduler.ts`, in two stages:
 
 1. **Who's on each period**: simulated annealing over on/off choices, minimising the sum of squared minutes (even playing time)
-   plus small penalties for substitutions (cheaper at half-time), broken-up spells and long bench stints. Keepers and locked cells are fixed.
+   plus small penalties for substitutions (cheaper at half-time), broken-up spells and long bench spells (anything over 10 minutes is penalised increasingly, so nobody sits out for half the match). Keepers and locked cells are fixed.
 2. **Where they play**: an exact per-period assignment that favours preferred positions, then the same line
    (defence/midfield/attack), and keeps players in place between periods.
 
