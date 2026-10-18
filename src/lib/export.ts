@@ -1,4 +1,4 @@
-import { formatMinutes, playerMinutes } from './schedule-utils';
+import { formatMinutes } from './schedule-utils';
 import { fixtureTitle, type Fixture, type Period, type PlayerId, type Schedule } from './types';
 
 /**
@@ -33,11 +33,6 @@ export function scheduleToTsv(
     const label = b === 0 ? 'Subs' : '';
     lines.push([label, ...columns.map((c) => (c === 'HT' ? label : name(benches[c][b] ?? null)))]);
   }
-
-  lines.push([]);
-  lines.push(['Player', 'Minutes']);
-  const minutes = playerMinutes(schedule, periods, squadOrder);
-  for (const id of squadOrder) lines.push([name(id), formatMinutes(minutes.get(id)!.total)]);
 
   return lines.map((l) => l.join('\t')).join('\n');
 }
