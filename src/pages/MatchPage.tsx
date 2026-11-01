@@ -16,7 +16,7 @@ import { StatsTab } from './match/StatsTab';
 
 export function MatchPage() {
   const { matchId, tab = 'sheet' } = useParams();
-  const { path } = useTeam();
+  const { path, membership } = useTeam();
   const match = useMatch(matchId);
   const squad = useSquad(match.data?.season_id);
 
@@ -31,7 +31,7 @@ export function MatchPage() {
       <div className="match-head no-print">
         <div>
           <h1>
-            vs {m.opponent || 'TBC'} {o && <span className={`result-pill ${o}`}>{o} {scoreline(m)}</span>}
+            {membership.club_name} vs {m.opponent || 'TBC'} {o && <span className={`result-pill ${o}`}>{o} {scoreline(m)}</span>}
           </h1>
           <p className="muted">
             {[formatDate(m.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), m.kickoff?.slice(0, 5), sideLabel(m.side), m.competition, m.venue]
@@ -105,7 +105,7 @@ function SheetTab({ match, squad, editing }: { match: Match; squad: SquadPlayer[
       row={sheet.data}
       canEdit={canEdit}
       editing={editing && canEdit}
-      teamName={membership.team_name}
+      teamName={membership.club_name}
     />
   );
 }
