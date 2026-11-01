@@ -13,6 +13,18 @@ const MIN_ROW = 22;
 /** Used when the print layout can't be measured (browsers other than Chrome/Edge). */
 const SINGLE_COLUMN_MAX = 12;
 
+/** Keepers first (in the order they play in goal), then everyone else alphabetically. */
+export function statsOrder<P extends { id: string; name: string }>(schedule: Schedule, players: P[]) {
+  const keepers = new Set(schedule.map((row) => row[0]).filter(Boolean));
+  const ordered = [
+    ...[...keepers].map((id) => players.find((p) => p.id === id)).filter((p): p is P => !!p),
+    ...players
+      .filter((p) => !keepers.has(p.id))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true })),
+  ];
+  return { keepers, ordered };
+}
+
 /**
  * Blank tally chart for recording stats by hand on the day. Print only; it stretches to fill
  * the rest of the page, using a single column of players unless the rows would get too cramped.
@@ -44,15 +56,7 @@ export function StatsSheet({ schedule, players }: Props) {
     return () => mq.removeEventListener('change', onChange);
   }, [players.length]);
 
-  // Keepers first (in the order they play in goal), then everyone else alphabetically.
-  const keepers = new Set(schedule.map((row) => row[0]).filter(Boolean));
-  const keeperOrder = [...keepers];
-  const ordered = [
-    ...keeperOrder.map((id) => players.find((p) => p.id === id)).filter((p): p is Player => !!p),
-    ...players
-      .filter((p) => !keepers.has(p.id))
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true })),
-  ];
+  const { keepers, ordered } = statsOrder(schedule, players);
   const half = Math.ceil(ordered.length / 2);
   const groups = split ? [ordered.slice(0, half), ordered.slice(half)] : [ordered];
 

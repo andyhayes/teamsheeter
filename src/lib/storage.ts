@@ -13,7 +13,7 @@ export interface AppState {
 
 const STORAGE_KEY = 'teamsheeter:v1';
 
-export const newId = () => Math.random().toString(36).slice(2, 10);
+export const newId = () => crypto.randomUUID();
 
 export function defaultState(): AppState {
   const squad = DEMO_SQUAD.map((p) => ({ ...p, id: newId() }));

@@ -10,13 +10,15 @@ interface Props {
   formation: Formation;
   players: Player[];
   locks: Locks;
+  /** Show team name, opponent, date and venue inputs (off when those are edited on the fixture). */
+  fixtureFields?: boolean;
   onChange: (patch: Partial<Fixture>) => void;
   onToggleStartingSub: (id: string) => void;
 }
 
 const sameHalves = (a: number[][], b: number[][]) => JSON.stringify(a) === JSON.stringify(b);
 
-export function FixturePanel({ fixture, squad, formation, players, locks, onChange, onToggleStartingSub }: Props) {
+export function FixturePanel({ fixture, squad, formation, players, locks, fixtureFields = true, onChange, onToggleStartingSub }: Props) {
   const presetId = PERIOD_PRESETS.find((p) => sameHalves(p.halves, fixture.halves))?.id ?? 'custom';
   const keeperOptions = players;
   const outfield = players.length - new Set(fixture.keepers.filter(Boolean)).size;
@@ -63,7 +65,8 @@ export function FixturePanel({ fixture, squad, formation, players, locks, onChan
   return (
     <div className="fixture-panel">
       <section className="card">
-        <h2>Fixture</h2>
+        <h2>{fixtureFields ? 'Fixture' : 'Formation'}</h2>
+        {fixtureFields && (<>
         <label className="field">
           <span>Team name</span>
           <input
@@ -94,8 +97,9 @@ export function FixturePanel({ fixture, squad, formation, players, locks, onChan
             </select>
           </label>
         </div>
+        </>)}
         <label className="field">
-          <span>Formation</span>
+          {fixtureFields && <span>Formation</span>}
           <select value={fixture.formationId} onChange={(e) => onChange({ formationId: e.target.value })}>
             {FORMATIONS.map((f) => (
               <option key={f.id} value={f.id}>

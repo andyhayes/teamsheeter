@@ -3,3 +3,8 @@ dist
 *.local
 .DS_Store
 ~$*.xlsx
+.env
+.env.*
+!.env.example
+# Season workbooks hold children's names and stats: keep them out of git.
+*.xlsx

@@ -1,15 +1,18 @@
 import { Fragment, useMemo, useState, type CSSProperties } from 'react';
 import { positionCost } from '../lib/scheduler';
 import { formatMinutes } from '../lib/schedule-utils';
+import type { CellRef } from '../lib/sheet-state';
 import { benchKey, lockKey, type Locks, type Period, type Player, type PlayerId, type Schedule } from '../lib/types';
+
+export type { CellRef };
 
 // Printed page geometry (px at 96dpi), matching the print styles: A4 width minus 10mm margins,
 // the position column and each HT column.
 const PRINT_CONTENT_WIDTH = 718;
 const PRINT_POS_COL = 46;
 const PRINT_HT_COL = 32;
-/** Cell padding plus room for the • and ▼ markers that can follow a name. */
-const PRINT_CELL_EXTRAS = 26;
+/** Cell padding plus room for the •, ▲ and ▼ markers that can follow a name. */
+const PRINT_CELL_EXTRAS = 36;
 
 /**
  * Largest font size (px) at which the longest player name still fits one line of a printed
@@ -26,12 +29,6 @@ function fitPrintFontSize(names: string[], periods: Period[]): number {
   return Math.min(16, Math.max(11, Math.floor(size * 2) / 2));
 }
 
-export interface CellRef {
-  period: number;
-  slot?: number;
-  benchPlayer?: PlayerId;
-}
-
 interface Props {
   schedule: Schedule;
   slots: string[];
@@ -43,6 +40,12 @@ interface Props {
   onToggleLock: (period: number, slot: number) => void;
   onToggleBenchLock: (period: number, player: PlayerId) => void;
   onTogglePeriodLock: (period: number) => void;
+  /** View only: no swapping or lock controls. */
+  readOnly?: boolean;
+  /** Goals in each period. When given, the goals rows show on screen with these counts (otherwise print only, blank). */
+  goalsByPeriod?: { for: number[]; against: number[] };
+  /** Show − / + in the goals cells (on screen only) to add or remove a goal in that period. */
+  onGoalStep?: (side: 'for' | 'against', period: number, delta: 1 | -1) => void;
 }
 
 export function TeamSheet({
@@ -56,6 +59,9 @@ export function TeamSheet({
   onToggleLock,
   onToggleBenchLock,
   onTogglePeriodLock,
+  readOnly = false,
+  goalsByPeriod,
+  onGoalStep,
 }: Props) {
   const [hovered, setHovered] = useState<PlayerId | null>(null);
   const byId = new Map(players.map((p) => [p.id, p]));
@@ -64,6 +70,8 @@ export function TeamSheet({
   const isHalfStart = (k: number) => k > 0 && periods[k].half !== periods[k - 1].half;
   const halfLabel = (periods.at(-1)?.half ?? 0) > 1 ? 'Break' : 'HT';
 
+  /** On the pitch in period k but not in the previous period. */
+  const cameOn = (k: number, id: PlayerId | null) => !!id && k > 0 && !schedule[k - 1].includes(id);
   /** On the pitch in period k but not in the next period. */
   const goingOff = (k: number, id: PlayerId | null) =>
     !!id && k < schedule.length - 1 && !schedule[k + 1].includes(id);
@@ -77,7 +85,7 @@ export function TeamSheet({
       isSelected && 'selected',
       selected && selected.period === k && !isSelected && 'swap-target',
       id && id === hovered && 'hover-player',
-      id && k > 0 && !schedule[k - 1].includes(id) && !extra.startsWith('bench') && 'came-on',
+      !extra.startsWith('bench') && cameOn(k, id) && 'came-on',
       !extra.startsWith('bench') && goingOff(k, id) && 'going-off',
     ]
       .filter(Boolean)
@@ -96,7 +104,7 @@ export function TeamSheet({
   return (
     <div className="sheet-scroll">
       <table
-        className="sheet"
+        className={`sheet ${readOnly ? 'read-only' : ''}`}
         style={{ '--print-cell-size': `${printFontSize}px` } as CSSProperties}
       >
         <thead>
@@ -115,13 +123,13 @@ export function TeamSheet({
                     <div className="period-time">
                       {formatMinutes(p.start)}–{formatMinutes(p.start + p.duration)}
                     </div>
-                    <button
+                    {!readOnly && <button
                       className={`lock-btn period-lock no-print ${allLocked ? 'on' : ''}`}
                       onClick={() => onTogglePeriodLock(k)}
                       title={allLocked ? 'Unlock this period' : 'Lock this whole period'}
                     >
                       {allLocked ? <LockIcon /> : <UnlockIcon />}
-                    </button>
+                    </button>}
                   </th>
                 </Fragment>
               );
@@ -143,7 +151,7 @@ export function TeamSheet({
                     {isHalfStart(k) && <td className="ht-col">{label}</td>}
                     <td
                       className={cellClass(k, id, isSelected, locked ? 'locked' : '')}
-                      onClick={() => onCellClick({ period: k, slot: s })}
+                      onClick={readOnly ? undefined : () => onCellClick({ period: k, slot: s })}
                       {...playerProps(id)}
                     >
                       <span className="name">
@@ -153,13 +161,18 @@ export function TeamSheet({
                             •
                           </span>
                         )}
+                        {cameOn(k, id) && (
+                          <span className="came-on-mark" title="Came on" aria-label="Came on">
+                            ▲
+                          </span>
+                        )}
                         {goingOff(k, id) && (
                           <span className="due-off" title={offLabel(k)} aria-label={offLabel(k)}>
                             ▼
                           </span>
                         )}
                       </span>
-                      {id && (
+                      {id && !readOnly && (
                         <button
                           className={`lock-btn no-print ${locked ? 'on' : ''}`}
                           onClick={(e) => {
@@ -190,11 +203,11 @@ export function TeamSheet({
                     {id ? (
                       <td
                         className={cellClass(k, id, isSelected, locked ? 'bench locked' : 'bench')}
-                        onClick={() => onCellClick({ period: k, benchPlayer: id })}
+                        onClick={readOnly ? undefined : () => onCellClick({ period: k, benchPlayer: id })}
                         {...playerProps(id)}
                       >
                         <span className="name">{byId.get(id)?.name}</span>
-                        <button
+                        {!readOnly && <button
                           className={`lock-btn no-print ${locked ? 'on' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -203,7 +216,7 @@ export function TeamSheet({
                           title={locked ? 'Unlock' : 'Keep this player on the bench for this period'}
                         >
                           {locked ? <LockIcon /> : <UnlockIcon />}
-                        </button>
+                        </button>}
                       </td>
                     ) : (
                       <td className="cell bench empty" />
@@ -213,14 +226,33 @@ export function TeamSheet({
               })}
             </tr>
           ))}
-          {/* Print only: boxes for tallying goals in each period. */}
-          {['Goals for', 'Goals against'].map((label, r) => (
-            <tr key={label} className={r === 0 ? 'goals-row first' : 'goals-row'}>
-              <th className="pos-col">{label}</th>
+          {/* Boxes for tallying goals in each period: print only, unless the goal log fills them. */}
+          {(['for', 'against'] as const).map((side, r) => (
+            <tr key={side} className={`goals-row ${r === 0 ? 'first' : ''} ${goalsByPeriod ? 'shown' : ''}`}>
+              <th className="pos-col">Goals {side}</th>
               {periods.map((_, k) => (
                 <Fragment key={k}>
                   {isHalfStart(k) && <td className="ht-col" />}
-                  <td className="cell goals-cell" />
+                  <td className="cell goals-cell">
+                    {onGoalStep ? (
+                      <span className="stepper">
+                        <button
+                          className="no-print"
+                          onClick={() => onGoalStep(side, k, -1)}
+                          disabled={!goalsByPeriod?.[side][k]}
+                          aria-label={`Remove a goal ${side} in period ${k + 1}`}
+                        >
+                          −
+                        </button>
+                        <b>{goalsByPeriod?.[side][k] || ''}</b>
+                        <button className="no-print" onClick={() => onGoalStep(side, k, 1)} aria-label={`Add a goal ${side} in period ${k + 1}`}>
+                          +
+                        </button>
+                      </span>
+                    ) : (
+                      goalsByPeriod?.[side][k] || ''
+                    )}
+                  </td>
                 </Fragment>
               ))}
             </tr>
@@ -228,10 +260,10 @@ export function TeamSheet({
         </tbody>
       </table>
       <div className="sheet-key">
-        <span><i className="key-on" /> Came on</span>
+        <span><i className="key-on" /><span className="came-on-mark">▲</span> Came on</span>
         <span><i className="key-off" /><span className="due-off">▼</span> Due off at next break</span>
         <span><span className="off-pos">•</span> Not a preferred position</span>
-        <span className="no-print"><LockIcon /> Locked</span>
+        {!readOnly && <span className="no-print"><LockIcon /> Locked</span>}
       </div>
     </div>
   );
