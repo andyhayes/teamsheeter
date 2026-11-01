@@ -182,7 +182,9 @@ function SheetScreen({
         </Link>
       </>
     ) : null;
-    return <SheetView match={match} squad={squad} state={state} canEdit={canEdit} toolbar={toolbar} />;
+    return (
+      <SheetView match={match} squad={squad} state={state} canEdit={canEdit} toolbar={toolbar} onChange={canEdit ? onChange : undefined} />
+    );
   }
 
   const toolbar = (

@@ -42,6 +42,8 @@ interface Props {
   onTogglePeriodLock: (period: number) => void;
   /** View only: no swapping or lock controls. */
   readOnly?: boolean;
+  /** Cells can be clicked to swap players, but the lock controls are left out. */
+  swapOnly?: boolean;
   /** Goals in each period. When given, the goals rows show on screen with these counts (otherwise print only, blank). */
   goalsByPeriod?: { for: number[]; against: number[] };
   /** Show − / + in the goals cells (on screen only) to add or remove a goal in that period. */
@@ -60,10 +62,12 @@ export function TeamSheet({
   onToggleBenchLock,
   onTogglePeriodLock,
   readOnly = false,
+  swapOnly = false,
   goalsByPeriod,
   onGoalStep,
 }: Props) {
   const [hovered, setHovered] = useState<PlayerId | null>(null);
+  const showLocks = !readOnly && !swapOnly;
   const byId = new Map(players.map((p) => [p.id, p]));
   const benches = schedule.map((row) => players.filter((p) => !row.includes(p.id)).map((p) => p.id));
   const benchRows = Math.max(0, ...benches.map((b) => b.length));
@@ -123,7 +127,7 @@ export function TeamSheet({
                     <div className="period-time">
                       {formatMinutes(p.start)}–{formatMinutes(p.start + p.duration)}
                     </div>
-                    {!readOnly && <button
+                    {showLocks && <button
                       className={`lock-btn period-lock no-print ${allLocked ? 'on' : ''}`}
                       onClick={() => onTogglePeriodLock(k)}
                       title={allLocked ? 'Unlock this period' : 'Lock this whole period'}
@@ -172,7 +176,7 @@ export function TeamSheet({
                           </span>
                         )}
                       </span>
-                      {id && !readOnly && (
+                      {id && showLocks && (
                         <button
                           className={`lock-btn no-print ${locked ? 'on' : ''}`}
                           onClick={(e) => {
@@ -207,7 +211,7 @@ export function TeamSheet({
                         {...playerProps(id)}
                       >
                         <span className="name">{byId.get(id)?.name}</span>
-                        {!readOnly && <button
+                        {showLocks && <button
                           className={`lock-btn no-print ${locked ? 'on' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -263,7 +267,7 @@ export function TeamSheet({
         <span><i className="key-on" /><span className="came-on-mark">▲</span> Came on</span>
         <span><i className="key-off" /><span className="due-off">▼</span> Due off at next break</span>
         <span><span className="off-pos">•</span> Not a preferred position</span>
-        {!readOnly && <span className="no-print"><LockIcon /> Locked</span>}
+        {showLocks && <span className="no-print"><LockIcon /> Locked</span>}
       </div>
     </div>
   );

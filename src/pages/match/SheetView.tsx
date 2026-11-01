@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { ChangeoverList } from '../../components/ChangeoverList';
 import { MinutesPanel } from '../../components/MinutesPanel';
 import { StatsSheet, statsOrder } from '../../components/StatsSheet';
@@ -11,7 +12,7 @@ import type { Match, MatchGoal } from '../../lib/db-types';
 import { periodAt } from '../../lib/match-stats';
 import { deleteRows, insertRow, useMatchGoals, type SquadPlayer } from '../../lib/queries';
 import { matchLength } from '../../lib/schedule-utils';
-import { deriveSheet, type SheetState } from '../../lib/sheet-state';
+import { deriveSheet, sameCell, swapCells, type CellRef, type SheetState } from '../../lib/sheet-state';
 import { COUNTERS, useStatsRows, type Counter } from './stats-rows';
 import { GoalLog } from './GoalLog';
 
@@ -22,6 +23,8 @@ interface Props {
   canEdit: boolean;
   /** The Edit button (coaches), plus the team sheet's save indicator. */
   toolbar?: ReactNode;
+  /** Coaches: swap players in the grid here without opening the full editor. */
+  onChange?: (update: (s: SheetState) => SheetState) => void;
 }
 
 const noop = () => {};
@@ -30,12 +33,23 @@ const noop = () => {};
  * The team sheet as it prints, with the match stats entered beneath it: tallies per player in place
  * of the printed tally chart, and the goal log, which also fills the goals rows under the grid.
  */
-export function SheetView({ match, squad, state, canEdit, toolbar }: Props) {
+export function SheetView({ match, squad, state, canEdit, toolbar, onChange }: Props) {
   const { formation, periods, players } = useMemo(() => deriveSheet(state), [state]);
   const schedule = state.schedule;
   const goals = useMatchGoals(match.id);
   const stats = useStatsRows(match, squad);
   const captureRef = useRef<HTMLDivElement>(null);
+  const [selected, setSelected] = useState<CellRef | null>(null);
+
+  // Tap a player, then another in the same period, to swap them (as in the editor).
+  const handleCellClick = (cell: CellRef) => {
+    if (!onChange) return;
+    if (!selected || selected.period !== cell.period) return setSelected(cell);
+    if (sameCell(selected, cell)) return setSelected(null);
+    const from = selected;
+    onChange((s) => swapCells(s, from, cell));
+    setSelected(null);
+  };
   const [imageStatus, setImageStatus] = useState<'idle' | 'working' | 'copied' | 'downloaded' | 'failed'>('idle');
 
   const goalsByPeriod = useMemo(() => {
@@ -98,6 +112,8 @@ export function SheetView({ match, squad, state, canEdit, toolbar }: Props) {
 
   const copyImage = async () => {
     if (!captureRef.current) return;
+    // Clear any selected cell so it doesn't appear highlighted in the image.
+    flushSync(() => setSelected(null));
     setImageStatus('working');
     const filename = `teamsheet-${[match.date, match.opponent].filter(Boolean).join('-').replace(/[^\w-]+/g, '-') || 'fixture'}.png`;
     try {
@@ -131,7 +147,7 @@ export function SheetView({ match, squad, state, canEdit, toolbar }: Props) {
               <button onClick={copyImage} disabled={!schedule || imageStatus === 'working'} title="Copy the team sheet to the clipboard as a picture">
                 {{ idle: 'Copy image', working: 'Copying…', copied: 'Image copied ✓', downloaded: 'Downloaded ✓', failed: 'Copy failed' }[imageStatus]}
               </button>
-              <button onClick={() => window.print()} disabled={!schedule}>
+              <button onClick={() => { flushSync(() => setSelected(null)); window.print(); }} disabled={!schedule}>
                 Print
               </button>
             </div>
@@ -144,11 +160,12 @@ export function SheetView({ match, squad, state, canEdit, toolbar }: Props) {
               periods={periods}
               players={players}
               locks={state.locks}
-              selected={null}
-              readOnly
+              selected={selected}
+              readOnly={!onChange}
+              swapOnly
               goalsByPeriod={goalsByPeriod}
               onGoalStep={canEdit ? stepGoal : undefined}
-              onCellClick={noop}
+              onCellClick={handleCellClick}
               onToggleLock={noop}
               onToggleBenchLock={noop}
               onTogglePeriodLock={noop}
