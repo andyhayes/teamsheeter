@@ -36,8 +36,8 @@ interface Props {
 }
 
 /**
- * The sheet's title and fixture line. With `formationOnly`, the screen shows just the formation
- * (the page around it already shows the fixture); print and Copy image always get the full header.
+ * The sheet's title and fixture line. With `formationOnly`, the screen shows just the formation and
+ * match length (the page around it already shows the fixture); print and Copy image always get the full header.
  */
 export function SheetTitle({
   fixture,
@@ -60,7 +60,7 @@ export function SheetTitle({
       <p className="muted">
         {before.length > 0 && <span className={hide}>{before.join(' · ')} · </span>}
         {formation}
-        <span className={hide}> · {matchLength(fixture.halves)} min</span>
+        {` · ${matchLength(fixture.halves)} min`}
       </p>
     </div>
   );
