@@ -59,7 +59,7 @@ export const useSeasons = (teamId: string | undefined) =>
   useQuery({
     queryKey: ['seasons', teamId],
     enabled: !!teamId,
-    queryFn: async () => must(await db().from('seasons').select('*').eq('team_id', teamId!).order('label', { ascending: false })) as Season[],
+    queryFn: async () => must(await db().from('seasons').select('*').eq('team_id', teamId!).order('sort_order').order('label', { ascending: false })) as Season[],
   });
 
 export const usePlayers = (teamId: string | undefined) =>
@@ -101,6 +101,19 @@ export const useMatches = (seasonId: string | undefined) =>
     queryKey: ['matches', seasonId],
     enabled: !!seasonId,
     queryFn: async () => must(await db().from('matches').select('*').eq('season_id', seasonId!).order('date').order('kickoff')) as Match[],
+  });
+
+/** Number of matches in each of a team's seasons, keyed by season id. */
+export const useSeasonMatchCounts = (teamId: string | undefined) =>
+  useQuery({
+    queryKey: ['seasonMatchCounts', teamId],
+    enabled: !!teamId,
+    queryFn: async () => {
+      const rows = must(await db().from('matches').select('season_id').eq('team_id', teamId!)) as { season_id: string }[];
+      const counts: Record<string, number> = {};
+      for (const r of rows) counts[r.season_id] = (counts[r.season_id] ?? 0) + 1;
+      return counts;
+    },
   });
 
 export const useMatch = (id: string | undefined) =>

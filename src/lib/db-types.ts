@@ -62,6 +62,8 @@ export interface Season {
   label: string;
   age_group: string;
   format: string;
+  /** Lowest first; the first season is the default. */
+  sort_order: number;
 }
 
 export interface PlayerRow {

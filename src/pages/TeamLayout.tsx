@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom';
+import { SeasonForm, type SeasonFields } from '../components/SeasonForm';
 import { Shell } from '../components/Shell';
 import { Empty, ErrorBox, Loading } from '../components/ui';
 import type { Season } from '../lib/db-types';
@@ -89,16 +90,23 @@ export function TeamLayout() {
           <span className="team-name">
             {membership!.club_name} · <b>{membership!.team_name}</b>
           </span>
-          {ctx.seasons.length > 0 && (
-            <select value={ctx.season?.id ?? ''} onChange={(e) => ctx.setSeasonId(e.target.value)} aria-label="Season">
-              {ctx.seasons.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                  {s.age_group ? ` · ${s.age_group}` : ''}
-                </option>
-              ))}
-            </select>
-          )}
+          <span className="season-picker">
+            {ctx.seasons.length > 0 && (
+              <select value={ctx.season?.id ?? ''} onChange={(e) => ctx.setSeasonId(e.target.value)} aria-label="Season">
+                {ctx.seasons.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                    {s.age_group ? ` · ${s.age_group}` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+            {ctx.canEdit && ctx.seasons.length > 0 && (
+              <Link to={ctx.path('settings')} className="small">
+                Manage seasons
+              </Link>
+            )}
+          </span>
         </div>
         <ErrorBox error={seasons.error} />
         {seasons.isLoading ? <Loading /> : needsSeason ? <FirstSeason /> : <Outlet />}
@@ -110,49 +118,26 @@ export function TeamLayout() {
 function FirstSeason() {
   const qc = useQueryClient();
   const { teamId, canEdit, setSeasonId } = useTeam();
-  const [label, setLabel] = useState(currentSeasonLabel());
-  const [age, setAge] = useState('');
-  const [format, setFormat] = useState('9v9');
-  const [error, setError] = useState<unknown>(null);
   if (!canEdit) return <main className="page narrow"><Empty>This team hasn't started a season yet.</Empty></main>;
-  const create = async () => {
-    try {
-      const s = await insertRow<Season>('seasons', { team_id: teamId, label, age_group: age, format });
-      setSeasonId(s.id);
-      await qc.invalidateQueries({ queryKey: ['seasons', teamId] });
-    } catch (e) {
-      setError(e);
-    }
+  const create = async (f: SeasonFields) => {
+    const s = await insertRow<Season>('seasons', { team_id: teamId, ...f });
+    setSeasonId(s.id);
+    await qc.invalidateQueries({ queryKey: ['seasons', teamId] });
   };
   return (
     <main className="page narrow">
-      <form
-        className="card"
-        onSubmit={(e) => {
-          e.preventDefault();
-          create();
-        }}
-      >
+      <section className="card">
         <h2>Start your first season</h2>
-        <div className="field-row three">
-          <label className="field">
-            <span>Season</span>
-            <input value={label} onChange={(e) => setLabel(e.target.value)} />
-          </label>
-          <label className="field">
-            <span>Age group</span>
-            <input value={age} onChange={(e) => setAge(e.target.value)} placeholder="U13" />
-          </label>
-          <label className="field">
-            <span>Format</span>
-            <input value={format} onChange={(e) => setFormat(e.target.value)} />
-          </label>
-        </div>
-        <button className="primary" disabled={!label.trim()}>
-          Start season
-        </button>
-        <ErrorBox error={error} />
-      </form>
+        <SeasonForm
+          initial={{
+            label: currentSeasonLabel(),
+            age_group: '',
+            format: '9v9',
+          }}
+          submitLabel="Start season"
+          onSubmit={create}
+        />
+      </section>
     </main>
   );
 }
